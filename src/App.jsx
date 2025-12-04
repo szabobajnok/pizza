@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
 import './App.css'
+import PizzaDetails from './PizzaDetails'
 
 const API_BASE = 'https://pizza.sulla.hu'
 
@@ -30,11 +32,10 @@ function resolveImage(img) {
   return '/vite.svg'
 }
 
-export const App = () => {
+function PizzaList() {
   const [pizzas, setPizzas] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     fetchAll()
@@ -53,22 +54,6 @@ export const App = () => {
       setError('Nem sikerült lekérni a pizzákat.')
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function fetchById(id) {
-    setSelected(null)
-    setError(null)
-    try {
-      const res = await fetch(`${API_BASE}/pizza/${encodeURIComponent(id)}`)
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-      const data = await res.json()
-      setSelected(data)
-      // scroll to details
-      setTimeout(() => document.getElementById('pizza-details')?.scrollIntoView({ behavior: 'smooth' }), 100)
-    } catch (err) {
-      console.error(err)
-      setError('Nem sikerült lekérni a pizza részleteit.')
     }
   }
 
@@ -109,7 +94,7 @@ export const App = () => {
                   <div className="mt-auto d-flex justify-content-between align-items-center">
                     <div className="fw-semibold">{price ? `${price} Ft` : ''}</div>
                     <div>
-                      <button className="btn btn-sm btn-outline-primary me-2" onClick={() => fetchById(id)}>Részletek</button>
+                      <Link to={`/pizza/${id}`} className="btn btn-sm btn-outline-primary me-2">Részletek</Link>
                       <button className="btn btn-sm btn-outline-secondary" onClick={() => navigator.clipboard?.writeText(id)}>Másol ID</button>
                     </div>
                   </div>
@@ -120,35 +105,19 @@ export const App = () => {
         })}
       </div>
 
-      {selected && (
-        <div id="pizza-details" className="card mt-4">
-          <div className="row g-0">
-            <div className="col-md-4">
-              <img
-                src={resolveImage(pick(selected, ['image', 'imageUrl', 'image_url', 'kep', 'img', 'photo']))}
-                className="img-fluid rounded-start"
-                alt={pick(selected, ['name', 'nev', 'title'])}
-                style={{ objectFit: 'cover', height: '100%' }}
-                onError={(e) => { e.currentTarget.src = '/vite.svg' }}
-              />
-            </div>
-            <div className="col-md-8">
-              <div className="card-body text-start">
-                <h5 className="card-title">{pick(selected, ['name', 'nev', 'title'])}</h5>
-                <p className="card-text">{pick(selected, ['description', 'leiras', 'desc'])}</p>
-                <p className="card-text"><small className="text-muted">ID: {pick(selected, ['id', 'pizza_id', '_id', 'pk'])}</small></p>
-                {pick(selected, ['price', 'ar', 'cost']) && <p className="card-text">Ár: <strong>{pick(selected, ['price', 'ar', 'cost'])} Ft</strong></p>}
-                <button className="btn btn-secondary" onClick={() => setSelected(null)}>Bezár</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {!loading && pizzas.length === 0 && !error && (
         <div className="text-muted">Nincsenek pizzák a lista lekérésekor.</div>
       )}
     </div>
+  )
+}
+
+export const App = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<PizzaList />} />
+      <Route path="/pizza/:id" element={<PizzaDetails />} />
+    </Routes>
   )
 }
 
